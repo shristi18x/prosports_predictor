@@ -8,19 +8,16 @@ from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score
 import pickle
 
-# 1. Load the data
+#Load the data
 df = pd.read_csv('cleaned_data.csv')
 
-# 2. Split into X and y
+#Split into X and y
 X = df.drop(columns=['result'])
 y = df['result']
 
-# 3. Train/Test Split
+#Train/Test Split
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1)
 
-# 4. The Upgraded Transformer
-# - OneHotEncoder handles team names and cities
-# - StandardScaler makes sure 'wickets' and 'ratings' are on the same scale for the AI
 trf = ColumnTransformer([
     ('trf', OneHotEncoder(sparse_output=False, drop='first'), ['batting_team', 'bowling_team', 'city']),
     ('scaling', StandardScaler(), ['runs_left', 'balls_left', 'wickets_left', 'target_score', 'striker_rating', 'bowler_rating'])
@@ -34,16 +31,15 @@ pipe = Pipeline(steps=[
     ('step2', RandomForestClassifier(n_estimators=100, random_state=1, max_depth=15))
 ])
 
-# 6. Training
+#Training
 print("Training the Advanced Random Forest Model...")
 pipe.fit(X_train, y_train)
 
-# 7. Accuracy Check
+#Accuracy Check
 y_pred = pipe.predict(X_test)
 final_acc = accuracy_score(y_test, y_pred) * 100
 print(f"--- TRAINING COMPLETE ---")
 print(f"Upgraded Model Accuracy: {final_acc:.2f}%")
 
-# 8. Save the upgraded brain
 pickle.dump(pipe, open('pipe.pkl', 'wb'))
 print("High-performance 'pipe.pkl' saved!")
