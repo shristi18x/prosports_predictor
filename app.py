@@ -3,10 +3,7 @@ import pickle
 import pandas as pd
 import sklearn
 
-# 1. PAGE CONFIGURATION
 st.set_page_config(page_title="IPL Match Predictor 2026", layout="wide")
-
-# 2. CUSTOM CSS FOR PRO LOOK
 st.markdown("""
     <style>
     .main {
@@ -31,7 +28,6 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. SAFE DATA LOADING (LOAD PLAYERS WITH CORRECT COLUMNS)
 @st.cache_data
 def load_player_data():
     try:
@@ -61,42 +57,35 @@ matchup_df = load_matchup_data()
 batting_stats, bowling_stats = load_player_data()
 player_names = sorted(list(batting_stats.keys()))
 
-# 4. LOAD MODEL
+# Load model
 pipe = pickle.load(open('pipe.pkl', 'rb'))
 
-# 5. DATA CONSTANTS
 teams = ['Rajasthan Royals', 'Royal Challengers Bengaluru', 'Sunrisers Hyderabad', 
          'Delhi Capitals', 'Chennai Super Kings', 'Gujarat Titans', 
          'Lucknow Super Giants', 'Kolkata Knight Riders', 'Punjab Kings', 'Mumbai Indians']
-
 cities = ['Hyderabad', 'Bangalore', 'Mumbai', 'Indore', 'Kolkata', 'Delhi',
        'Chandigarh', 'Jaipur', 'Chennai', 'Ahmedabad', 'Cuttack', 'Nagpur', 'Dharamsala',
        'Visakhapatnam', 'Pune', 'Raipur', 'Ranchi', 'Abu Dhabi',
        'Sharjah', 'Dubai', 'Navi Mumbai', 'Lucknow', 'Guwahati',
        'Mohali']
 
-# --- SIDEBAR FOR SETTINGS ---
+#sidebar
 st.sidebar.header("Match Settings")
 batting_team = st.sidebar.selectbox('Batting Team', sorted(teams))
 bowling_team = st.sidebar.selectbox('Bowling Team', sorted(teams), index=1)
 selected_city = st.sidebar.selectbox('Host City', sorted(cities))
 target = st.sidebar.number_input('Target Score', min_value=1, value=180)
-
 st.sidebar.markdown("---")
 st.sidebar.subheader("Player Matchup")
-# Selecting the specific batter and bowler from your CSV list
+
 selected_striker = st.sidebar.selectbox("Current Batter", player_names)
 selected_bowler = st.sidebar.selectbox("Current Bowler", player_names)
-
-# Assigning the correct numerical ratings from your CSV columns
 striker_rating = batting_stats[selected_striker]
 bowler_rating = bowling_stats[selected_bowler]
-
-# --- MAIN PAGE LAYOUT ---
+#main page
 st.title("IPL Match Win Predictor Dashboard")
 st.markdown("---")
-
-# Input columns
+#inputs
 col1, col2, col3 = st.columns(3)
 with col1:
     score = st.number_input('Current Score', min_value=0, value=100)
@@ -104,12 +93,10 @@ with col2:
     overs = st.number_input('Overs Completed (0-20)', min_value=0.0, max_value=20.0, value=15.0, step=0.1)
 with col3:
     wickets = st.number_input('Wickets Out', min_value=0, max_value=10, value=3)
-
-# --- FIXED CALCULATIONS ---
+#Calculations
 completed_overs = int(overs) 
 extra_balls = int((overs * 10) % 10) 
-
-# Ball count validation
+#Ball count validation
 if extra_balls > 5:
     st.error("Invalid input: An over cannot have more than 5 balls (e.g., 19.5 is the limit before 20.0)")
 
@@ -118,7 +105,6 @@ balls_left = 120 - total_balls_bowled
 runs_left = target - score
 wickets_left = 10 - wickets
 
-# Default to the general ratings from players.csv
 final_striker_sr = striker_rating 
 
 if matchup_df is not None:
@@ -132,14 +118,13 @@ if matchup_df is not None:
             final_striker_sr = stats['h2h_strike_rate'].values[0]
             st.sidebar.info(f"H2H Stats Found! SR: {round(final_striker_sr, 1)}")
 
-# --- PREDICTION LOGIC ---
-if st.button('ANALYZE WIN PROBABILITY', use_container_width=True):
-    
+#Prediction
+if st.button('ANALYZE WIN PROBABILITY', use_container_width=True): 
     # Initialize variables
     win = 0.0
     loss = 0.0
 
-    # 1. First, check if the game is already over
+    #check if game is already over
     if balls_left <= 0:
         if runs_left > 0:
             win, loss = 0.0, 1.0
@@ -148,7 +133,7 @@ if st.button('ANALYZE WIN PROBABILITY', use_container_width=True):
             win, loss = 1.0, 0.0
             st.success(f"Match Over! {batting_team} won.")
     
-    # 2. Check for "Impossible" Scenarios (The Kill Switch)
+    #check for impossible scenarios
     elif runs_left > (balls_left * 6):
         win = 0.0
         loss = 1.0
@@ -161,7 +146,7 @@ if st.button('ANALYZE WIN PROBABILITY', use_container_width=True):
         
     else:
         
-        # 3. If "Possible," ask the AI Model using CSV ratings
+        # if possible
         input_df = pd.DataFrame({
             'batting_team': [batting_team], 
             'bowling_team': [bowling_team], 
@@ -177,13 +162,12 @@ if st.button('ANALYZE WIN PROBABILITY', use_container_width=True):
         loss = result[0][0]
         win = result[0][1]
 
-    # --- DISPLAY RESULTS ---
+    #display output
     st.markdown("### Match Equation")
     m1, m2, m3 = st.columns(3)
     m1.metric("Runs Needed", runs_left)
     m2.metric("Balls Remaining", balls_left)
     m3.metric("Wickets in Hand", wickets_left)
-
     st.markdown("---")
     st.subheader("Win Probability")
     
@@ -194,3 +178,4 @@ if st.button('ANALYZE WIN PROBABILITY', use_container_width=True):
         st.markdown(f"<p class='win-text'>{batting_team}: {round(win*100)}%</p>", unsafe_allow_html=True)
     with c2:
         st.markdown(f"<p class='loss-text'>{bowling_team}: {round(loss*100)}%</p>", unsafe_allow_html=True)
+    
