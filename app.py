@@ -1,6 +1,7 @@
 import streamlit as st
 import pickle
 import pandas as pd
+import sklearn
 
 # 1. PAGE CONFIGURATION
 st.set_page_config(page_title="IPL Match Predictor 2026", layout="wide")
