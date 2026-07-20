@@ -20,8 +20,6 @@ h2h = deliveries.groupby(['batter_name', 'bowler_name']).agg({
 h2h.columns = ['batter_name', 'bowler_name', 'h2h_runs', 'h2h_balls']
 #h2h sr
 h2h['h2h_strike_rate'] = (h2h['h2h_runs'] / h2h['h2h_balls']) * 100
-
-# 5. Save this to use in your App
+#save in csv
 h2h.to_csv('matchups.csv', index=False)
-
-print("matchups.csv generated successfully!")
+print("matchups.csv generated")
